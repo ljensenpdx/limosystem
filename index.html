@@ -2,98 +2,78 @@
 <html lang="en">
 <head>
     <style>
-        /* Layout Container */
-        .dashboard-wrapper {
-            display: flex; /* Side-by-side layout */
-            height: 100vh;
+        /* This ensures the header and filters are part of the page flow */
+        .admin-header {
+            display: flex;
+            flex-direction: column; /* Stack elements vertically */
+            background: white;
+            border-bottom: 2px solid #ddd;
         }
 
-        /* Fixed Sidebar for Search & Mini Calendar */
-        .sidebar {
-            width: 300px;
+        .top-bar {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
             background: #2c3e50;
             color: white;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            z-index: 10;
+            gap: 15px;
         }
 
-        /* Main Calendar Area */
-        .main-content {
-            flex-grow: 1;
-            overflow-y: auto;
+        /* The Date Picker Tray - This pushes the calendar down when visible */
+        #datePickerTray {
+            display: none; /* Toggle this to 'flex' with JS */
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        /* The Main Calendar Container */
+        .calendar-content {
+            padding: 20px;
             background: #f4f7f6;
-            padding: 20px;
         }
 
-        /* Inline Mini Calendar (Not a popup) */
-        .mini-calendar-inline {
-            background: white;
-            color: #333;
-            border-radius: 8px;
-            padding: 15px;
-        }
-
-        .search-input-group input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 4px;
-            border: none;
-        }
-
-        .search-btn-large {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-        }
-
-        /* Keep existing Main Calendar Grid styles from before */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             background: white;
             border: 1px solid #ddd;
         }
-        /* ... (rest of your existing grid CSS) ... */
+        /* ... Cell styles from before ... */
     </style>
 </head>
 <body>
 
-<div class="dashboard-wrapper">
-    <div class="sidebar">
-        <h2>LimoOps</h2>
-        
-        <div class="search-input-group">
-            <label>Global Search</label>
-            <input type="text" placeholder="Client, Driver, Plate...">
+    <div class="admin-header">
+        <div class="top-bar">
+            <div style="font-weight: bold; font-size: 1.2rem;">LimoOps</div>
+            <input type="text" placeholder="Search Client, Driver, Plate..." style="width:300px; padding:8px;">
+            <button onclick="toggleTray()" style="padding:8px 15px; cursor:pointer;">📅 Select Date Range</button>
+            <button style="background:#27ae60; color:white; border:none; padding:8px 20px; cursor:pointer;">SEARCH</button>
         </div>
 
-        <div class="date-selection">
-            <label>Date Range Select</label>
-            <div class="mini-calendar-inline">
-                <div style="text-align: center; font-weight: bold; margin-bottom: 10px;">February 2026</div>
-                <div class="mini-grid">
-                   </div>
-            </div>
+        <div id="datePickerTray">
+            <div class="mini-calendar-unit">
+                <div style="text-align:center; font-weight:bold;">Start Date</div>
+                </div>
+            <div class="mini-calendar-unit">
+                <div style="text-align:center; font-weight:bold;">End Date</div>
+                </div>
         </div>
-
-        <button class="search-btn-large">SEARCH RESERVATIONS</button>
     </div>
 
-    <div class="main-content">
+    <div class="calendar-content">
         <div class="calendar-grid" id="mainGrid">
             </div>
     </div>
-</div>
 
+    <script>
+        function toggleTray() {
+            const tray = document.getElementById('datePickerTray');
+            tray.style.display = (tray.style.display === 'flex') ? 'none' : 'flex';
+        }
+    </script>
 </body>
 </html>
