@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LimoOps Admin Dashboard</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --maint: #ffeded;
+            --maint-text: #c0392b;
+            --unassigned: #fff9db;
+            --unassigned-text: #f59f00;
+            --border: #ddd;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f4f7f6; }
+
+        /* --- Header & Search Bar --- */
+        .header { background: var/(--primary); color: white; padding: 15px 25px; display: flex; gap: 20px; align-items: center; }
+        .search-box { padding: 8px; border-radius: 4px; border: none; width: 250px; }
+        .date-range-container { position: relative; }
+        .date-btn { background: white; color: #333; padding: 8px 15px; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; }
+        .search-btn { background: #27ae60; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* --- Mini Calendar Popup --- */
+        .mini-calendar-popup {
+            position: absolute; top: 45px; left: 0; background: white; border: 1px solid #ccc;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 15px; z-index: 100; display: none;
+            width: 250px; border-radius: 8px;
+        }
+        .mini-calendar-popup.active { display: block; }
+        .mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; font-size: 12px; }
+        .mini-grid div { padding: 5px; cursor: pointer; border-radius: 3px; }
+        .mini-grid div:hover { background: var(--accent); color: white; }
+
+        /* --- Main Calendar Grid --- */
+        .calendar-container { padding: 20px; }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: white;
+            border: 1px solid var(--border);
+        }
+        .day-header { background: #eee; padding: 10px; text-align: center; font-weight: bold; border: 1px solid var(--border); }
+        .day-cell { 
+            min-height: 120px; border: 1px solid var(--border); padding: 5px; 
+            display: flex; flex-direction: column; gap: 4px; overflow-y: auto;
+        }
+        .date-num { font-weight: bold; margin-bottom: 5px; color: #666; }
+
+        /* --- Entry Types --- */
+        .entry { font-size: 11px; padding: 3px 6px; border-radius: 3px; display: flex; align-items: center; gap: 4px; }
+        .maint { background: var(--maint); color: var(--maint-text); font-weight: bold; border-left: 3px solid var(--maint-text); }
+        .trip { background: #eef2f7; color: #2c3e50; border-left: 3px solid var(--accent); }
+        .unassigned { background: var(--unassigned); color: var(--unassigned-text); border-left: 3px solid var(--unassigned-text); font-weight: bold; }
+
+        .today { background: #fffdf0; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div style="font-size: 1.2rem; font-weight: bold; margin-right: 20px;">LimoOps</div>
+        <input type="text" class="search-box" placeholder="Search Client, Driver, or Plate...">
+        
+        <div class="date-range-container">
+            <div class="date-btn" onclick="toggleMiniCalendar()">📅 Select Date Range</div>
+            <div id="miniCalendar" class="mini-calendar-popup">
+                <strong>February 2026</strong>
+                <hr>
+                <div class="mini-grid">
+                    <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                    <div style="grid-column: 1;">1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div>
+                    <div>8</div><div style="background:#3498db; color:white;">9</div><div>10</div><div>11</div><div>12</div><div>13</div><div>14</div>
+                </div>
+                <p style="font-size: 10px; margin-top: 10px;">Select Start & End Date</p>
+            </div>
+        </div>
+
+        <button class="search-btn" onclick="performSearch()">SEARCH</button>
+    </div>
+
+    <div class="calendar-container">
+        <div class="calendar-grid" id="mainGrid">
+            <div class="day-header">SUN</div><div class="day-header">MON</div><div class="day-header">TUE</div>
+            <div class="day-header">WED</div><div class="day-header">THU</div><div class="day-header">FRI</div><div class="day-header">SAT</div>
+            
+            </div>
+    </div>
+
+    <script>
+        // Mock Data
+        const schedule = {
+            9:  [{ type: 'maint', text: '🛠 Limo 02: Oil Change' }, { type: 'trip', text: '✈ 04:30A - Miller (S1)' }, { type: 'trip', text: '💍 12:00P - Wedding (L1)' }],
+            10: [{ type: 'maint', text: '🛠 SUV 01: Brakes' }, { type: 'unassigned', text: '⚠️ 02:00P - UNASSIGNED' }, { type: 'trip', text: '✈ 05:45P - Jensen (L1)' }],
+            13: [{ type: 'unassigned', text: '⚠️ 06:00P - Bachelorette' }],
+            14: [{ type: 'trip', text: '❤️ VALENTINES SPECIALS' }, { type: 'maint', text: '🛠 Limo 01: Detail' }]
+        };
+
+        function renderCalendar() {
+            const grid = document.getElementById('mainGrid');
+            // February 2026 starts on a Sunday (Day 0)
+            for (let i = 1; i <= 28; i++) {
+                const dayBox = document.createElement('div');
+                dayBox.className = 'day-cell' + (i === 9 ? ' today' : '');
+                
+                let html = `<div class="date-num">${i}</div>`;
+                
+                if (schedule[i]) {
+                    schedule[i].forEach(item => {
+                        html += `<div class="entry ${item.type}">${item.text}</div>`;
+                    });
+                }
+                
+                dayBox.innerHTML = html;
+                grid.appendChild(dayBox);
+            }
+        }
+
+        function toggleMiniCalendar() {
+            document.getElementById('miniCalendar').classList.toggle('active');
+        }
+
+        function performSearch() {
+            alert("Searching database for selected range and keywords...");
+            document.getElementById('miniCalendar').classList.remove('active');
+        }
+
+        renderCalendar();
+    </script>
+</body>
+</html>
